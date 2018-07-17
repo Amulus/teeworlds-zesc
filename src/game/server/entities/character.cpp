@@ -1194,6 +1194,7 @@ void CCharacter::SetZomb()
 
 	if(m_Item && (m_Item != HITEM_GUN || m_Item != HITEM_GRENADE))
 	{
+		int64_t Mask = CmaskOne(From);
 		GameServer()->SendBroadcast("Your human item transfered into a zombie item!", m_pPlayer->GetCID());
 		GameServer()->CreateSound(m_Pos, SOUND_WEAPON_SWITCH);
 		SetEmote(EMOTE_ANGRY, Server()->Tick() + 1200 * Server()->TickSpeed() / 1000);
@@ -1220,12 +1221,18 @@ void CCharacter::SetZomb()
 
 void CCharacter::Snap(int SnappingClient)
 {
+	int id = m_pPlayer->GetCID();
+
+	if (!Server()->Translate(id, SnappingClient))
+		return;
 	if(NetworkClipped(SnappingClient))
 		return;
 
 	CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pPlayer->GetCID(), sizeof(CNetObj_Character)));
 	if(!pCharacter)
 		return;
+
+	CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, id, sizeof(CNetObj_Character)));
 
 	// write down the m_Core
 	if(!m_ReckoningTick || GameServer()->m_World.m_Paused)
@@ -1247,6 +1254,12 @@ void CCharacter::Snap(int SnappingClient)
 		m_EmoteType = EMOTE_NORMAL;
 		m_EmoteStop = -1;
 	}
+
+	if (pCharacter->m_HookedPlayer != -1)
+		{
+			if (!Server()->Translate(pCharacter->m_HookedPlayer, SnappingClient))
+				pCharacter->m_HookedPlayer = -1;
+		}
 
 	pCharacter->m_Emote = m_EmoteType;
 

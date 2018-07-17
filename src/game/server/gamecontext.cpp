@@ -84,7 +84,7 @@ class CCharacter *CGameContext::GetPlayerChar(int ClientID)
 	return m_apPlayers[ClientID]->GetCharacter();
 }
 
-void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount)
+void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount, int64_t Mask)
 {
 	float a = 3 * 3.14159f / 2 + Angle;
 	//float a = get_angle(dir);
@@ -93,7 +93,8 @@ void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount)
 	for(int i = 0; i < Amount; i++)
 	{
 		float f = mix(s, e, float(i+1)/float(Amount+2));
-		CNetEvent_DamageInd *pEvent = (CNetEvent_DamageInd *)m_Events.Create(NETEVENTTYPE_DAMAGEIND, sizeof(CNetEvent_DamageInd));
+		
+		CNetEvent_DamageInd *pEvent = (CNetEvent_DamageInd *)m_Events.Create(NETEVENTTYPE_DAMAGEIND, sizeof(CNetEvent_DamageInd), Mask);
 		if(pEvent)
 		{
 			pEvent->m_X = (int)Pos.x;
@@ -103,10 +104,10 @@ void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount)
 	}
 }
 
-void CGameContext::CreateHammerHit(vec2 Pos)
+void CGameContext::CreateHammerHit(vec2 Pos, int64_t Mask)
 {
 	// create the event
-	CNetEvent_HammerHit *pEvent = (CNetEvent_HammerHit *)m_Events.Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit));
+	CNetEvent_HammerHit *pEvent = (CNetEvent_HammerHit *)m_Events.Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit), int64_t Mask);
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -118,7 +119,7 @@ void CGameContext::CreateHammerHit(vec2 Pos)
 void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage)
 {
 	// create the event
-	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
+	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion), Mask);
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
