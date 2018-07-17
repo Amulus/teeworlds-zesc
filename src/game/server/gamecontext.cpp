@@ -107,7 +107,7 @@ void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount, int64_t Ma
 void CGameContext::CreateHammerHit(vec2 Pos, int64_t Mask)
 {
 	// create the event
-	CNetEvent_HammerHit *pEvent = (CNetEvent_HammerHit *)m_Events.Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit), int64_t Mask);
+	CNetEvent_HammerHit *pEvent = (CNetEvent_HammerHit *)m_Events.Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit));
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -119,7 +119,7 @@ void CGameContext::CreateHammerHit(vec2 Pos, int64_t Mask)
 void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage)
 {
 	// create the event
-	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion), Mask);
+	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -175,10 +175,10 @@ void create_smoke(vec2 Pos)
 	}
 }*/
 
-void CGameContext::CreatePlayerSpawn(vec2 Pos)
+void CGameContext::CreatePlayerSpawn(vec2 Pos, int64_t Mask)
 {
 	// create the event
-	CNetEvent_Spawn *ev = (CNetEvent_Spawn *)m_Events.Create(NETEVENTTYPE_SPAWN, sizeof(CNetEvent_Spawn));
+	CNetEvent_Spawn *ev = (CNetEvent_Spawn *)m_Events.Create(NETEVENTTYPE_SPAWN, sizeof(CNetEvent_Spawn), Mask);
 	if(ev)
 	{
 		ev->m_X = (int)Pos.x;
@@ -186,10 +186,10 @@ void CGameContext::CreatePlayerSpawn(vec2 Pos)
 	}
 }
 
-void CGameContext::CreateDeath(vec2 Pos, int ClientID)
+void CGameContext::CreateDeath(vec2 Pos, int ClientID, int64_t Mask)
 {
 	// create the event
-	CNetEvent_Death *pEvent = (CNetEvent_Death *)m_Events.Create(NETEVENTTYPE_DEATH, sizeof(CNetEvent_Death));
+	CNetEvent_Death *pEvent = (CNetEvent_Death *)m_Events.Create(NETEVENTTYPE_DEATH, sizeof(CNetEvent_Death), Mask);
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -198,7 +198,7 @@ void CGameContext::CreateDeath(vec2 Pos, int ClientID)
 	}
 }
 
-void CGameContext::CreateSound(vec2 Pos, int Sound, int Mask)
+void CGameContext::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 {
 	if (Sound < 0)
 		return;
@@ -548,6 +548,23 @@ void CGameContext::OnClientEnter(int ClientID)
 		m_pController->ResetEvents();
 }
 
+// Dummy
+void CGameContext::NewDummy(int DummyID, bool CustomColor, int ColorBody, int ColorFeet, const char *pSkin, const char *pName, const char *pClan, int Country)
+{
+	m_apPlayers[DummyID] = new(DummyID) CPlayer(this, DummyID, m_pController->GetAutoTeam(DummyID));
+	m_apPlayers[DummyID]->m_IsDummy = true;
+	Server()->DummyJoin(DummyID, pName, pClan, Country);
+
+	str_copy(m_apPlayers[DummyID]->m_TeeInfos.m_SkinName, pSkin, sizeof(m_apPlayers[DummyID]->m_TeeInfos.m_SkinName));
+	m_apPlayers[DummyID]->m_TeeInfos.m_UseCustomColor = CustomColor;
+	m_apPlayers[DummyID]->m_TeeInfos.m_ColorBody = ColorBody;
+	m_apPlayers[DummyID]->m_TeeInfos.m_ColorFeet = ColorFeet;
+
+	OnClientEnter(DummyID);
+}
+
+
+
 void CGameContext::OnClientConnected(int ClientID)
 {
 	// Check which team the player should be on
@@ -692,6 +709,34 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			pPlayer->m_LastChat = Server()->Tick();
 
+			// Dummy
+		if(!str_comp_nocase(pMsg->m_pMessage, "/dummy"))
+		{
+			for(int i = 0; i < g_Config.m_SvMaxClients; i++)
+			{
+				if(m_apPlayers[i])
+					continue;
+
+				NewDummy(i, true);
+				return;
+			}
+		}
+		else if(!str_comp_nocase(pMsg->m_pMessage, "/delete"))
+		{
+			for(int i = 0; i < g_Config.m_SvMaxClients; i++)
+			{
+				if(!m_apPlayers[i] || !m_apPlayers[i]->m_IsDummy)
+					continue;
+
+				Server()->DummyLeave(i/*, "Any Reason?"*/);
+				return;
+			}
+		}
+		else if(pMsg->m_pMessage[0] == '/')
+		{
+			// Wrong CMD?
+		}
+		else
 			SendChat(ClientID, Team, pMsg->m_pMessage);
 		}
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
@@ -795,6 +840,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					return;
 				}
 
+				// Dummy
+				if(m_apPlayers[KickID]->m_IsDummy)
+				{
+					SendChatTarget(ClientID, "Invalid client id to kick (Dummy)");
+					return;
+				}
+
 				str_format(aChatmsg, sizeof(aChatmsg), "'%s' called for vote to kick '%s' (%s)", Server()->ClientName(ClientID), Server()->ClientName(KickID), pReason);
 				str_format(aDesc, sizeof(aDesc), "Kick '%s'", Server()->ClientName(KickID));
 				if (!g_Config.m_SvVoteKickBantime)
@@ -823,6 +875,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				if(SpectateID == ClientID)
 				{
 					SendChatTarget(ClientID, "You can't move yourself");
+					return;
+				}
+
+				// Dummy
+				if(m_apPlayers[SpectateID]->m_IsDummy)
+				{
+					SendChatTarget(ClientID, "Invalid client id to move (Dummy)");
 					return;
 				}
 
@@ -1350,6 +1409,13 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 			return;
 		}
 
+		// Dummy
+		if(pSelf->m_apPlayers[KickID]->m_IsDummy)
+		{
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid client id to kick (Dummy)");
+			return;
+		}
+
 		if (!g_Config.m_SvVoteKickBantime)
 		{
 			str_format(aBuf, sizeof(aBuf), "kick %d %s", KickID, pReason);
@@ -1369,6 +1435,13 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 		if(SpectateID < 0 || SpectateID >= MAX_CLIENTS || !pSelf->m_apPlayers[SpectateID] || pSelf->m_apPlayers[SpectateID]->GetTeam() == TEAM_SPECTATORS)
 		{
 			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid client id to move");
+			return;
+		}
+
+		// Dummy
+		if(pSelf->m_apPlayers[SpectateID]->m_IsDummy)
+		{
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid client id to move (Dummy)");
 			return;
 		}
 
@@ -1742,10 +1815,23 @@ void CGameContext::ConCreateRingExplosion(IConsole::IResult *pResult, void *pUse
 	((CGameContext *)pUserData)->CreateRingExplosion(vec2(pResult->GetInteger(0)*32, pResult->GetInteger(1)*32), pResult->GetInteger(2), pResult->GetInteger(3), pResult->GetInteger(4), true);
 }
 
+void CGameContext::ConConnectDummy(IConsole::IResult *pResult, void *pUserData)
+{
+	static int DummyID = 2;
+	//DummyID = pResult->GetInteger(1);
+	((CGameContext *)pUserData)->NewDummy(DummyID);
+	DummyID++;
+}
+
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
+
+	//Dummy
+
+	Console()->Register("connect_dummy", "", CFGFLAG_SERVER, ConConnectDummy, this, "Connect new Dummy");
+
 
 	Console()->Register("tune", "si", CFGFLAG_SERVER, ConTuneParam, this, "Tune variable to value");
 	Console()->Register("tune_reset", "", CFGFLAG_SERVER, ConTuneReset, this, "Reset tuning");

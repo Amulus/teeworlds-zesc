@@ -1062,6 +1062,7 @@ void CCharacter::Die(int Killer, int Weapon)
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
+	int64_t Mask = CmaskOne(From);
 	if(m_pPlayer->GetTeam() == TEAM_BLUE && (Weapon == WEAPON_GRENADE || Weapon == WEAPON_HAMMER))
 		m_Core.m_Vel += Force;
 	if(Weapon == WEAPON_GRENADE && From == m_pPlayer->GetCID() && m_pPlayer->GetTeam() == TEAM_BLUE && m_Item == HITEM_GRENADE)
@@ -1106,7 +1107,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			m_Item ? m_FreezeTick = Server()->TickSpeed()*1.0f : m_FreezeTick = Server()->TickSpeed()*1.5f;
 		else if(GameServer()->m_apPlayers[From] && GameServer()->m_apPlayers[From]->GetCharacter() && GameServer()->m_apPlayers[From]->GetCharacter()->m_Item == HITEM_RIFLE)
 			m_Item ? m_FreezeTick = Server()->TickSpeed()*1.5f : m_FreezeTick = Server()->TickSpeed()*2.0f;
-		GameServer()->CreatePlayerSpawn(m_Pos);
+		GameServer()->CreatePlayerSpawn(m_Pos, Mask);
 	}
 	if(m_BurnTick)
 		AddVel *= 2.5f;
@@ -1123,12 +1124,12 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		if(Server()->Tick() < m_DamageTakenTick+25)
 		{
 			// make sure that the damage indicators doesn't group together
-			GameServer()->CreateDamageInd(m_Pos, m_DamageTaken*0.25f, Dmg);
+			GameServer()->CreateDamageInd(m_Pos, m_DamageTaken*0.25f, Dmg, Mask);
 		}
 		else
 		{
 			m_DamageTaken = 0;
-			GameServer()->CreateDamageInd(m_Pos, 0, Dmg);
+			GameServer()->CreateDamageInd(m_Pos, 0, Dmg, Mask);
 		}
 
 		if(Dmg)
@@ -1194,7 +1195,6 @@ void CCharacter::SetZomb()
 
 	if(m_Item && (m_Item != HITEM_GUN || m_Item != HITEM_GRENADE))
 	{
-		int64_t Mask = CmaskOne(From);
 		GameServer()->SendBroadcast("Your human item transfered into a zombie item!", m_pPlayer->GetCID());
 		GameServer()->CreateSound(m_Pos, SOUND_WEAPON_SWITCH);
 		SetEmote(EMOTE_ANGRY, Server()->Tick() + 1200 * Server()->TickSpeed() / 1000);
@@ -1231,8 +1231,6 @@ void CCharacter::Snap(int SnappingClient)
 	CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pPlayer->GetCID(), sizeof(CNetObj_Character)));
 	if(!pCharacter)
 		return;
-
-	CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, id, sizeof(CNetObj_Character)));
 
 	// write down the m_Core
 	if(!m_ReckoningTick || GameServer()->m_World.m_Paused)

@@ -90,6 +90,8 @@ public:
 			STATE_READY,
 			STATE_INGAME,
 
+			STATE_DUMMY,
+
 			SNAPRATE_INIT=0,
 			SNAPRATE_FULL,
 			SNAPRATE_RECOVER
@@ -127,7 +129,7 @@ public:
 		void Reset();
 
 		NETADDR m_Addr;
-+		bool m_CustClt;
+		bool m_CustClt;
 	};
 
 	CClient m_aClients[MAX_CLIENTS];
@@ -215,6 +217,9 @@ public:
 	void SendServerInfo(const NETADDR *pAddr, int Token, bool Extended=false, int Offset=0);
 	void UpdateServerInfo();
 
+	void DummyJoin(int DummyID, const char *pDummyName, const char *pDummyClan, int Country);
+	void DummyLeave(int DummyID, const char *pDummyName = 0);
+
 	void PumpNetwork();
 
 	char *GetMapName();
@@ -243,7 +248,7 @@ public:
 	virtual void *SnapNewItem(int Type, int ID, int Size);
 	void SnapSetStaticsize(int ItemType, int Size);
 	virtual int* GetIdMap(int ClientID);
-+	virtual void SetCustClt(int ClientID);
+	virtual void SetCustClt(int ClientID);
 };
 
 #endif

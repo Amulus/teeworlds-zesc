@@ -16,7 +16,7 @@ typedef unsigned __int64 uint64_t;
 #include <stdint.h>
 #endif
 
-#include <generated/protocol.h>
+#include <game/generated/protocol.h>
 enum
 {
 	TRIGGER_ONCE=0,

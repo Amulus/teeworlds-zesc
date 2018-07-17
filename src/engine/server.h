@@ -151,6 +151,10 @@ template<class T>
 	virtual void Kick(int ClientID, const char *pReason) = 0;
 
 	virtual void DemoRecorder_HandleAutoStart() = 0;
+
+	virtual void DummyJoin(int DummyID, const char *pDummyName, const char *pDummyClan, int Country) = 0;
+	virtual void DummyLeave(int DummyID, const char *pDummyName = 0) = 0;
+
 	virtual bool DemoRecorder_IsRecording() = 0;
 	virtual int* GetIdMap(int ClientID) = 0;
 	virtual void SetCustClt(int ClientID) = 0;

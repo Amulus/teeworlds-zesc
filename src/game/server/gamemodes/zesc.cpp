@@ -11,7 +11,7 @@
 
 CGameControllerZESC::CGameControllerZESC(class CGameContext *pGameServer) : IGameController(pGameServer)
 {
-	m_pGameType = "zESC";
+	m_pGameType = "zESC64p";
 	m_GameFlags = GAMEFLAG_TEAMS|GAMEFLAG_FLAGS;
 	m_apFlags[TEAM_RED] = 0;
 	m_apFlags[TEAM_BLUE] = 0;
@@ -101,7 +101,7 @@ int CGameControllerZESC::OnCharacterDeath(class CCharacter *pVictim, class CPlay
 			HadFlag |= 2;
 		if(F && F->m_pCarryingCharacter == pVictim)
 		{
-			GameServer()->CreateSoundGlobal(SOUND_CTF_DROP);
+			//GameServer()->CreateSoundGlobal(SOUND_CTF_DROP);
 			F->m_DropTick = Server()->Tick();
 			F->m_pCarryingCharacter = 0;
 			F->m_Vel = vec2(0,0);
@@ -255,14 +255,14 @@ void CGameControllerZESC::Tick()
 		if(!F->m_AtStand && (GameServer()->Collision()->GetCollisionAt(F->m_Pos.x, F->m_Pos.y)&CCollision::COLFLAG_DEATH || F->GameLayerClipped(F->m_Pos)))
 		{
 			GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", "flag_return");
-			GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN);
+			//GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN);
 			F->Reset();
 		}
 		if(!F->m_pCarryingCharacter && !F->m_AtStand)
 		{
 			if(Server()->Tick() > F->m_DropTick + Server()->TickSpeed()*30)
 			{
-				GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN);
+				//GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN);
 				F->Reset();
 			}
 			else
@@ -303,10 +303,10 @@ void CGameControllerZESC::Tick()
 					if(!GameServer()->m_apPlayers[c])
 						continue;
 
-					if(GameServer()->m_apPlayers[c]->GetTeam() == F->m_pCarryingCharacter->GetPlayer()->GetTeam())
-						GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_EN, GameServer()->m_apPlayers[c]->GetCID());
-					else
-						GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_PL, GameServer()->m_apPlayers[c]->GetCID());
+					//if(GameServer()->m_apPlayers[c]->GetTeam() == F->m_pCarryingCharacter->GetPlayer()->GetTeam())
+						//GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_EN, GameServer()->m_apPlayers[c]->GetCID());
+					//else
+						//GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_PL, GameServer()->m_apPlayers[c]->GetCID());
 				}
 				break;
 			}
@@ -420,7 +420,7 @@ void CGameControllerZESC::CheckZomb()
 		if(m_apFlags[TEAM_RED] && m_apFlags[TEAM_RED]->m_pCarryingCharacter)
 		{
 			GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", "flag_return");
-			GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN);
+			//GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN);
 			m_NukeTick = 0;
 			m_apFlags[TEAM_RED]->Reset();
 		}

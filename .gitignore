@@ -20,3 +20,7 @@ teeworlds*
 teeworlds_srv*
 tileset_border*
 versionsrv*
+
+build/
+
+autoexec_server\.log

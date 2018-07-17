@@ -95,6 +95,7 @@ class CGameContext : public IGameServer
 	static void ConTeleportTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConCreateExplosion(IConsole::IResult *pResult, void *pUserData);
 	static void ConCreateRingExplosion(IConsole::IResult *pResult, void *pUserData);
+	static void ConConnectDummy(IConsole::IResult *pResult, void *pUserData);
 	CGameContext(int Resetting);
 	void Construct(int Resetting);
 
@@ -152,11 +153,13 @@ public:
 
 	// helper functions
 	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount, int64_t Mask=-1);
-	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage, int64_t Mask=-1);
+	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage);
+	void CreateRingExplosion(vec2 Pos, int Rings, int Dist, int Explosions, bool Sound);
 	void CreateHammerHit(vec2 Pos, int64_t Mask=-1);
 	void CreatePlayerSpawn(vec2 Pos, int64_t Mask=-1);
 	void CreateDeath(vec2 Pos, int Who, int64_t Mask=-1);
-	void CreateSound(vec2 Pos, int64_t Sound, int Mask=-1);
+	void CreateSound(vec2 Pos, int Sound, int64_t Mask=-1);
+	void CreateSoundGlobal(int Sound, int Target=-1);
 
 
 	enum
@@ -174,6 +177,9 @@ public:
 	void SendWeaponPickup(int ClientID, int Weapon);
 	void SendBroadcast(const char *pText, int ClientID);
 
+
+	// Dummy
+	void NewDummy(int DummyID, bool CustomColor = false, int ColorBody = 12895054, int ColorFeet = 12895054, const char *pSkin = "coala", const char *pName = "Dummy", const char *pClan = "[16x16]", int Country = -1);
 
 	//
 	void CheckPureTuning();
